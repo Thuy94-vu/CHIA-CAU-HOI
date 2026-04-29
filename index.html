@@ -252,6 +252,80 @@ body::after{
 .t4 .qcard{background:rgba(245,200,66,.09);border:1px solid rgba(245,200,66,.2)}
 .t4 .qcard-label{color:#f5c842}
 
+/* ══════════════════════════
+   SCREEN COUNTDOWN
+══════════════════════════ */
+#s-countdown{
+  align-items:center;justify-content:center;
+  background:var(--bg);z-index:10;
+}
+.cd-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:1.8rem;
+  position:relative;
+}
+.cd-title{
+  font-family:var(--font-head);font-size:clamp(.95rem,2vw,1.2rem);
+  font-weight:700;letter-spacing:4px;text-transform:uppercase;
+  color:var(--muted2);
+  animation:fadeUp .5s ease forwards;
+}
+.cd-subtitle{
+  font-family:var(--font-head);font-size:clamp(.75rem,1.5vw,.95rem);
+  font-weight:500;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-top:-.8rem;
+  animation:fadeUp .5s ease .1s both;
+}
+/* ring */
+.cd-ring-wrap{
+  position:relative;width:240px;height:240px;
+  animation:fadeUp .5s ease .15s both;
+}
+.cd-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.cd-track{fill:none;stroke:rgba(255,255,255,.06);stroke-width:10}
+.cd-arc{
+  fill:none;stroke-width:10;stroke-linecap:round;
+  stroke:url(#cdGrad);
+  stroke-dasharray:691;stroke-dashoffset:0;
+  transition:stroke-dashoffset 1s linear;
+}
+.cd-glow{
+  fill:none;stroke-width:18;stroke-linecap:round;
+  stroke:url(#cdGrad);opacity:.18;filter:blur(8px);
+  stroke-dasharray:691;stroke-dashoffset:0;
+  transition:stroke-dashoffset 1s linear;
+}
+/* big number */
+.cd-num{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-head);font-size:7rem;font-weight:900;letter-spacing:-6px;
+  background:linear-gradient(135deg,#4f8ef7 0%,#2ec48a 60%,#f7874f 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.cd-num.pop{animation:numPop .35s cubic-bezier(.36,1.6,.4,1) forwards}
+/* particles canvas */
+#cd-canvas{position:fixed;inset:0;pointer-events:none;z-index:9}
+/* go text */
+.cd-go{
+  font-family:var(--font-head);font-size:clamp(2rem,5vw,3.5rem);font-weight:900;
+  letter-spacing:-1px;
+  background:linear-gradient(120deg,#4f8ef7,#2ec48a,#f7874f);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  opacity:0;transform:scale(.6);
+  transition:opacity .3s, transform .3s;
+}
+.cd-go.show{opacity:1;transform:scale(1)}
+/* animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes numPop{
+  0%{transform:scale(1.5);opacity:0}
+  60%{transform:scale(.92)}
+  100%{transform:scale(1);opacity:1}
+}
+@keyframes pulseRing{
+  0%,100%{opacity:.18}50%{opacity:.35}
+}
+
 /* scrollbar */
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -293,6 +367,31 @@ body::after{
     <div id="q-grid"></div>
 
     <button class="btn-go" onclick="doShuffle()">✦ &nbsp;Chia Ngẫu Nhiên Ngay</button>
+  </div>
+</div>
+
+<!-- SCREEN COUNTDOWN -->
+<canvas id="cd-canvas"></canvas>
+<div class="screen hidden" id="s-countdown">
+  <div class="cd-wrap">
+    <div class="cd-title">🎲 Đang xáo trộn câu hỏi</div>
+    <div class="cd-subtitle">Kết quả sẽ hiện sau...</div>
+    <div class="cd-ring-wrap">
+      <svg class="cd-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="cdGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4f8ef7"/>
+            <stop offset="50%" stop-color="#2ec48a"/>
+            <stop offset="100%" stop-color="#f7874f"/>
+          </linearGradient>
+        </defs>
+        <circle class="cd-track" cx="110" cy="110" r="100"/>
+        <circle class="cd-glow" id="cd-glow" cx="110" cy="110" r="100"/>
+        <circle class="cd-arc" id="cd-arc" cx="110" cy="110" r="100"/>
+      </svg>
+      <div class="cd-num" id="cd-num">5</div>
+    </div>
+    <div class="cd-go" id="cd-go">✦ Bắt đầu!</div>
   </div>
 </div>
 
@@ -357,6 +456,112 @@ function shuffleArr(arr){
   return a;
 }
 
+/* ── Particle system ── */
+const cdCanvas = document.getElementById('cd-canvas');
+const ctx = cdCanvas.getContext('2d');
+let particles = [], animFrame;
+
+function resizeCanvas(){
+  cdCanvas.width = window.innerWidth;
+  cdCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function spawnParticles(){
+  const colors = ['#4f8ef7','#2ec48a','#f7874f','#b96ef5','#f5c842'];
+  for(let i=0;i<18;i++){
+    particles.push({
+      x: window.innerWidth/2 + (Math.random()-0.5)*60,
+      y: window.innerHeight/2 + (Math.random()-0.5)*60,
+      vx: (Math.random()-0.5)*6,
+      vy: (Math.random()-0.7)*7,
+      r: Math.random()*6+3,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      life: 1, decay: Math.random()*.022+.012
+    });
+  }
+}
+
+function drawParticles(){
+  ctx.clearRect(0,0,cdCanvas.width,cdCanvas.height);
+  particles = particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.shadowBlur = 12; ctx.shadowColor = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    p.x+=p.vx; p.vy+=0.18; p.y+=p.vy;
+    p.life-=p.decay;
+  });
+  animFrame = requestAnimationFrame(drawParticles);
+}
+
+/* ── Countdown logic ── */
+let cdPending = null; // stores shuffle data to render after countdown
+
+function startCountdown(shuffleData){
+  document.getElementById('s-setup').classList.add('hidden');
+  document.getElementById('s-result').classList.add('hidden');
+  document.getElementById('s-countdown').classList.remove('hidden');
+
+  const TOTAL = 5;
+  const circumference = 691;
+  let count = TOTAL;
+  const numEl  = document.getElementById('cd-num');
+  const arcEl  = document.getElementById('cd-arc');
+  const glowEl = document.getElementById('cd-glow');
+  const goEl   = document.getElementById('cd-go');
+
+  // reset
+  numEl.textContent = count;
+  numEl.className = 'cd-num';
+  goEl.className  = 'cd-go';
+  arcEl.style.strokeDashoffset  = '0';
+  glowEl.style.strokeDashoffset = '0';
+  particles = [];
+  cancelAnimationFrame(animFrame);
+  drawParticles();
+
+  spawnParticles();
+
+  const tick = () => {
+    count--;
+    if(count > 0){
+      // update arc
+      const offset = circumference * (1 - count/TOTAL);
+      arcEl.style.strokeDashoffset  = offset;
+      glowEl.style.strokeDashoffset = offset;
+      // animate number
+      numEl.className = 'cd-num';
+      void numEl.offsetWidth;
+      numEl.textContent = count;
+      numEl.className = 'cd-num pop';
+      spawnParticles();
+      setTimeout(tick, 1000);
+    } else {
+      // show GO
+      arcEl.style.strokeDashoffset  = circumference;
+      glowEl.style.strokeDashoffset = circumference;
+      numEl.style.display = 'none';
+      goEl.className = 'cd-go show';
+      // big burst
+      for(let i=0;i<4;i++) setTimeout(spawnParticles, i*80);
+      setTimeout(()=>{
+        cancelAnimationFrame(animFrame);
+        ctx.clearRect(0,0,cdCanvas.width,cdCanvas.height);
+        numEl.style.display = '';
+        showResult(shuffleData);
+      }, 900);
+    }
+  };
+  setTimeout(tick, 1000);
+}
+
 function doShuffle(){
   const questions=[], gnames=[];
   for(let i=0;i<nQ;i++){
@@ -367,10 +572,14 @@ function doShuffle(){
     const el=document.getElementById('gn'+i);
     gnames.push(el&&el.value.trim()?el.value.trim():GD[i]);
   }
-
   const idxs = shuffleArr([...Array(nQ).keys()]);
   const groups = Array.from({length:nG},()=>[]);
   idxs.forEach((idx,pos)=>groups[pos%nG].push(idx));
+  startCountdown({questions, gnames, groups});
+}
+
+function showResult({questions, gnames, groups}){
+  document.getElementById('s-countdown').classList.add('hidden');
 
   const body = document.getElementById('res-body');
   body.innerHTML='';
@@ -402,7 +611,6 @@ function doShuffle(){
   else sub+=` · ${nG-extra} nhóm có ${base} câu, ${extra} nhóm có ${base+1} câu`;
   document.getElementById('res-sub').textContent=sub;
 
-  document.getElementById('s-setup').classList.add('hidden');
   document.getElementById('s-result').classList.remove('hidden');
 
   requestAnimationFrame(()=>{
