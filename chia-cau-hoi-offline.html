@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Chia Câu Hỏi Nhóm</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0c1a;
+  --surface:#13152b;
+  --border:rgba(255,255,255,.07);
+  --text:#e6e8f5;
+  --muted:#5f6288;
+  --muted2:#8890b8;
+  --font-head:"Segoe UI","SF Pro Display","Helvetica Neue",Arial,sans-serif;
+  --font-body:"Segoe UI","SF Pro Text","Helvetica Neue",Arial,sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);overflow:hidden}
+
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 55% 45% at 10% 15%,rgba(79,142,247,.11) 0%,transparent 65%),
+    radial-gradient(ellipse 45% 40% at 88% 82%,rgba(46,196,138,.09) 0%,transparent 65%),
+    radial-gradient(ellipse 38% 32% at 70% 8%,rgba(247,135,79,.08) 0%,transparent 55%);
+}
+
+/* pattern overlay */
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    radial-gradient(circle,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column}
+.screen.hidden{display:none!important}
+
+/* ══════════════════════════
+   SCREEN 1 — CÀI ĐẶT
+══════════════════════════ */
+#s-setup{align-items:center;justify-content:flex-start;overflow-y:auto;padding:2rem 1rem}
+
+.setup-wrap{width:100%;max-width:840px;margin:0 auto;padding-bottom:2rem}
+
+.logo-bar{
+  text-align:center;margin-bottom:2rem;
+}
+.logo-bar h1{
+  font-family:var(--font-head);
+  font-size:clamp(1.8rem,3.5vw,2.5rem);
+  font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,#4f8ef7 0%,#2ec48a 50%,#f7874f 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.logo-bar p{color:var(--muted2);font-size:14px;margin-top:6px}
+
+/* config sliders */
+.config-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.config-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:1.1rem 1.25rem;
+}
+.config-box label{
+  display:block;font-size:11px;font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:.7rem;
+}
+.config-row{display:flex;align-items:center;gap:14px}
+.config-row input[type=range]{
+  flex:1;height:5px;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+  background:rgba(255,255,255,.1);border-radius:99px;outline:none;
+}
+.config-row input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:#4f8ef7;cursor:pointer;
+  box-shadow:0 0 0 3px rgba(79,142,247,.25);
+}
+.config-val{
+  font-family:var(--font-head);font-size:1.7rem;font-weight:800;
+  color:var(--text);min-width:36px;text-align:right;
+}
+
+/* section labels */
+.slabel{
+  font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;margin-top:4px;
+}
+
+/* group names */
+#gname-grid{display:grid;gap:8px;margin-bottom:1.2rem}
+.gname-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;transition:border-color .2s;
+}
+.gname-row:focus-within{border-color:rgba(255,255,255,.2)}
+.gname-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.gname-row input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:var(--font-body);font-size:14px;font-weight:600;
+}
+.gname-row input::placeholder{color:var(--muted)}
+
+/* question inputs */
+#q-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.5rem}
+.q-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;transition:all .2s;
+}
+.q-row:focus-within{border-color:rgba(79,142,247,.4);background:rgba(79,142,247,.05)}
+.q-num{
+  font-family:var(--font-head);font-size:11px;font-weight:700;
+  color:var(--muted);min-width:22px;
+}
+.q-row input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:var(--font-body);font-size:14px;
+}
+.q-row input::placeholder{color:var(--muted)}
+
+.btn-go{
+  width:100%;padding:16px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,#4f8ef7 0%,#2ec48a 100%);
+  color:#fff;font-family:var(--font-head);font-size:16px;font-weight:800;
+  cursor:pointer;letter-spacing:.3px;transition:opacity .2s,transform .15s;
+  margin-bottom:2rem;
+}
+.btn-go:hover{opacity:.9;transform:translateY(-1px)}
+.btn-go:active{transform:scale(.98)}
+
+/* ══════════════════════════
+   SCREEN 2 — KẾT QUẢ
+══════════════════════════ */
+#s-result{background:var(--bg)}
+
+.res-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.2rem 2rem;flex-shrink:0;
+}
+.res-top-left h1{
+  font-family:var(--font-head);font-size:clamp(1.1rem,2.4vw,1.7rem);
+  font-weight:800;letter-spacing:-.5px;
+}
+.res-top-left p{color:var(--muted2);font-size:12.5px;margin-top:3px}
+.res-btns{display:flex;gap:8px}
+.btn-sm{
+  padding:8px 18px;border-radius:8px;font-family:var(--font-body);
+  font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;
+}
+.btn-back{background:rgba(255,255,255,.08);color:var(--muted2)}
+.btn-back:hover{background:rgba(255,255,255,.14);color:var(--text)}
+.btn-reshuf{background:linear-gradient(135deg,#4f8ef7,#2ec48a);color:#fff}
+.btn-reshuf:hover{opacity:.85}
+
+.sep{height:1px;background:rgba(255,255,255,.06);flex-shrink:0}
+
+#res-body{
+  flex:1;display:flex;overflow:hidden;
+}
+
+/* group columns */
+.gcol{
+  flex:1;display:flex;flex-direction:column;
+  padding:0 1.6rem 1.5rem;overflow-y:auto;
+  border-right:1px solid rgba(255,255,255,.05);
+  opacity:0;transform:translateY(22px);
+  transition:opacity .45s ease,transform .45s ease;
+}
+.gcol:last-child{border-right:none}
+.gcol.vis{opacity:1;transform:translateY(0)}
+
+.gcol[data-ci="0"]{background:linear-gradient(180deg,rgba(79,142,247,.07) 0%,transparent 55%)}
+.gcol[data-ci="1"]{background:linear-gradient(180deg,rgba(46,196,138,.07) 0%,transparent 55%)}
+.gcol[data-ci="2"]{background:linear-gradient(180deg,rgba(247,135,79,.07) 0%,transparent 55%)}
+.gcol[data-ci="3"]{background:linear-gradient(180deg,rgba(185,110,245,.07) 0%,transparent 55%)}
+.gcol[data-ci="4"]{background:linear-gradient(180deg,rgba(245,200,66,.07) 0%,transparent 55%)}
+
+.col-head{
+  display:flex;align-items:center;gap:10px;
+  padding:1.1rem 0 .9rem;border-bottom:2px solid;
+  flex-shrink:0;margin-bottom:.5rem;
+}
+.col-icon{
+  width:36px;height:36px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-head);font-size:15px;font-weight:800;
+}
+.col-name{
+  font-family:var(--font-head);font-weight:800;
+  font-size:clamp(.95rem,1.7vw,1.35rem);letter-spacing:-.3px;
+}
+
+/* badges */
+.col-badge{
+  margin-left:auto;flex-shrink:0;
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;
+}
+
+/* q cards */
+.qcard{
+  border-radius:11px;padding:.8rem 1rem;margin-bottom:7px;flex-shrink:0;
+  opacity:0;transform:translateX(-8px);
+  transition:opacity .35s,transform .35s;
+}
+.qcard.vis{opacity:1;transform:translateX(0)}
+.qcard-label{
+  font-size:10px;font-weight:700;letter-spacing:1.2px;
+  text-transform:uppercase;margin-bottom:4px;
+}
+.qcard-text{
+  font-size:clamp(12.5px,1.35vw,15.5px);
+  font-weight:500;line-height:1.55;color:var(--text);
+}
+
+/* ── color themes ── */
+.t0 .col-head{border-color:#4f8ef7}
+.t0 .col-icon{background:rgba(79,142,247,.15);color:#4f8ef7}
+.t0 .col-name{color:#4f8ef7}
+.t0 .col-badge{background:rgba(79,142,247,.15);color:#4f8ef7}
+.t0 .qcard{background:rgba(79,142,247,.09);border:1px solid rgba(79,142,247,.2)}
+.t0 .qcard-label{color:#4f8ef7}
+
+.t1 .col-head{border-color:#2ec48a}
+.t1 .col-icon{background:rgba(46,196,138,.15);color:#2ec48a}
+.t1 .col-name{color:#2ec48a}
+.t1 .col-badge{background:rgba(46,196,138,.15);color:#2ec48a}
+.t1 .qcard{background:rgba(46,196,138,.09);border:1px solid rgba(46,196,138,.2)}
+.t1 .qcard-label{color:#2ec48a}
+
+.t2 .col-head{border-color:#f7874f}
+.t2 .col-icon{background:rgba(247,135,79,.15);color:#f7874f}
+.t2 .col-name{color:#f7874f}
+.t2 .col-badge{background:rgba(247,135,79,.15);color:#f7874f}
+.t2 .qcard{background:rgba(247,135,79,.09);border:1px solid rgba(247,135,79,.2)}
+.t2 .qcard-label{color:#f7874f}
+
+.t3 .col-head{border-color:#b96ef5}
+.t3 .col-icon{background:rgba(185,110,245,.15);color:#b96ef5}
+.t3 .col-name{color:#b96ef5}
+.t3 .col-badge{background:rgba(185,110,245,.15);color:#b96ef5}
+.t3 .qcard{background:rgba(185,110,245,.09);border:1px solid rgba(185,110,245,.2)}
+.t3 .qcard-label{color:#b96ef5}
+
+.t4 .col-head{border-color:#f5c842}
+.t4 .col-icon{background:rgba(245,200,66,.15);color:#f5c842}
+.t4 .col-name{color:#f5c842}
+.t4 .col-badge{background:rgba(245,200,66,.15);color:#f5c842}
+.t4 .qcard{background:rgba(245,200,66,.09);border:1px solid rgba(245,200,66,.2)}
+.t4 .qcard-label{color:#f5c842}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: SETUP -->
+<div class="screen" id="s-setup">
+  <div class="setup-wrap">
+
+    <div class="logo-bar">
+      <h1>✦ Chia Câu Hỏi Ngẫu Nhiên</h1>
+      <p>Tuỳ chỉnh số câu &amp; số nhóm · nhấn chia · trình chiếu ngay — hoạt động offline hoàn toàn</p>
+    </div>
+
+    <div class="config-bar">
+      <div class="config-box">
+        <label>Số câu hỏi</label>
+        <div class="config-row">
+          <input type="range" id="r-q" min="2" max="30" value="9" oninput="syncQ(+this.value)"/>
+          <span class="config-val" id="v-q">9</span>
+        </div>
+      </div>
+      <div class="config-box">
+        <label>Số nhóm</label>
+        <div class="config-row">
+          <input type="range" id="r-g" min="2" max="5" value="3" oninput="syncG(+this.value)"/>
+          <span class="config-val" id="v-g">3</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="slabel">Tên các nhóm</p>
+    <div id="gname-grid"></div>
+
+    <p class="slabel">Nội dung câu hỏi</p>
+    <div id="q-grid"></div>
+
+    <button class="btn-go" onclick="doShuffle()">✦ &nbsp;Chia Ngẫu Nhiên Ngay</button>
+  </div>
+</div>
+
+<!-- SCREEN 2: RESULT -->
+<div class="screen hidden" id="s-result">
+  <div class="res-top">
+    <div class="res-top-left">
+      <h1>Bảng Phân Công Câu Hỏi</h1>
+      <p id="res-sub"></p>
+    </div>
+    <div class="res-btns">
+      <button class="btn-sm btn-back" onclick="goBack()">← Quay lại</button>
+      <button class="btn-sm btn-reshuf" onclick="doShuffle()">✦ Chia lại</button>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div id="res-body"></div>
+</div>
+
+<script>
+const GD = ['Nhóm A','Nhóm B','Nhóm C','Nhóm D','Nhóm E'];
+const COLORS = ['#4f8ef7','#2ec48a','#f7874f','#b96ef5','#f5c842'];
+let nQ = 9, nG = 3;
+
+function gVal(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+
+function renderGnames(){
+  const grid = document.getElementById('gname-grid');
+  const old = [...grid.querySelectorAll('input')].map(i=>i.value);
+  const cols = nG<=2?2:nG<=3?3:nG<=4?4:5;
+  grid.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+  grid.innerHTML='';
+  for(let i=0;i<nG;i++){
+    grid.innerHTML+=`<div class="gname-row">
+      <span class="gname-dot" style="background:${COLORS[i]}"></span>
+      <input id="gn${i}" value="${old[i]||GD[i]}" placeholder="${GD[i]}"/>
+    </div>`;
+  }
+}
+
+function renderQ(){
+  const grid = document.getElementById('q-grid');
+  const old = [...grid.querySelectorAll('input')].map(i=>i.value);
+  grid.innerHTML='';
+  for(let i=0;i<nQ;i++){
+    grid.innerHTML+=`<div class="q-row">
+      <span class="q-num">${i+1}</span>
+      <input id="q${i}" type="text" placeholder="Câu hỏi ${i+1}…" value="${old[i]||''}"/>
+    </div>`;
+  }
+}
+
+function syncQ(v){ nQ=v; document.getElementById('v-q').textContent=v; renderQ(); }
+function syncG(v){ nG=v; document.getElementById('v-g').textContent=v; renderGnames(); }
+
+function shuffleArr(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function doShuffle(){
+  const questions=[], gnames=[];
+  for(let i=0;i<nQ;i++){
+    const el=document.getElementById('q'+i);
+    questions.push(el&&el.value.trim()?el.value.trim():`Câu hỏi ${i+1}`);
+  }
+  for(let i=0;i<nG;i++){
+    const el=document.getElementById('gn'+i);
+    gnames.push(el&&el.value.trim()?el.value.trim():GD[i]);
+  }
+
+  const idxs = shuffleArr([...Array(nQ).keys()]);
+  const groups = Array.from({length:nG},()=>[]);
+  idxs.forEach((idx,pos)=>groups[pos%nG].push(idx));
+
+  const body = document.getElementById('res-body');
+  body.innerHTML='';
+  body.style.display='flex';
+
+  groups.forEach((group,gi)=>{
+    const col=document.createElement('div');
+    col.className=`gcol t${gi}`;
+    col.setAttribute('data-ci',gi);
+    const init=gnames[gi].slice(0,2).toUpperCase();
+    col.innerHTML=`<div class="col-head">
+      <div class="col-icon">${init}</div>
+      <span class="col-name">${gnames[gi]}</span>
+      <span class="col-badge">${group.length} câu</span>
+    </div>`;
+    group.forEach(qIdx=>{
+      const card=document.createElement('div');
+      card.className='qcard';
+      card.innerHTML=`<div class="qcard-label">Câu số ${qIdx+1}</div>
+        <div class="qcard-text">${questions[qIdx]}</div>`;
+      col.appendChild(card);
+    });
+    body.appendChild(col);
+  });
+
+  const base=Math.floor(nQ/nG), extra=nQ%nG;
+  let sub=`${nQ} câu · ${nG} nhóm`;
+  if(extra===0) sub+=` · ${base} câu/nhóm`;
+  else sub+=` · ${nG-extra} nhóm có ${base} câu, ${extra} nhóm có ${base+1} câu`;
+  document.getElementById('res-sub').textContent=sub;
+
+  document.getElementById('s-setup').classList.add('hidden');
+  document.getElementById('s-result').classList.remove('hidden');
+
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.gcol').forEach((col,ci)=>{
+      setTimeout(()=>{
+        col.classList.add('vis');
+        setTimeout(()=>{
+          col.querySelectorAll('.qcard').forEach((card,j)=>{
+            setTimeout(()=>card.classList.add('vis'),j*70);
+          });
+        },180);
+      },ci*100);
+    });
+  });
+}
+
+function goBack(){
+  document.getElementById('s-result').classList.add('hidden');
+  document.getElementById('s-setup').classList.remove('hidden');
+}
+
+renderGnames();
+renderQ();
+</script>
+</body>
+</html>
